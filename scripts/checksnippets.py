@@ -23,7 +23,7 @@ class MissingKotlinFile(Exception):
         self.javaName = javaName
     
     def __str__(self):
-        return 'ERROR: Missing kotlin file for java file {}'.format(self.javaName)
+        return f'ERROR: Missing kotlin file for java file {self.javaName}'
 
 
 class RegionTagMismatch(Exception):
@@ -33,8 +33,7 @@ class RegionTagMismatch(Exception):
         self.regionDiff = regionDiff
 
     def __str__(self):
-         return 'ERROR: The following snippets are missing from {}: {}'.format(
-             self.kotlinName, self.regionDiff)
+        return f'ERROR: The following snippets are missing from {self.kotlinName}: {self.regionDiff}'
 
 
 class MissingEndTag(Exception):
@@ -44,12 +43,11 @@ class MissingEndTag(Exception):
         self.missing = missing
 
     def __str__(self):
-        return 'ERROR: The following snippets in {} are missing END tags: {}'.format(
-            self.fileName, self.missing)
+        return f'ERROR: The following snippets in {self.fileName} are missing END tags: {self.missing}'
 
 
 def checkSnippets(folder):
-    print('Checking snippets in folder: {}'.format(folder))
+    print(f'Checking snippets in folder: {folder}')
     javaFiles = findFileWithPattern(folder, '*.java')
 
     for f in javaFiles:
@@ -81,7 +79,7 @@ def checkJavaFile(folder, javaFile):
     if len(regionDiff) > 0:
         raise RegionTagMismatch(kotlinName, regionDiff)
 
-    print('SUCCESS: {} <--> {}'.format(javaName, kotlinName))
+    print(f'SUCCESS: {javaName} <--> {kotlinName}')
 
 
 def regionsInFile(path):
@@ -90,16 +88,13 @@ def regionsInFile(path):
     with open(path, 'r') as f:
         lines = f.read().split('\n')
         for line in lines:
-            start_match = _RE_REGION_TAG_START.search(line)
-            if start_match:
+            if start_match := _RE_REGION_TAG_START.search(line):
                 start_tags.add(start_match.group(1))
 
-            end_match = _RE_REGION_TAG_END.search(line)
-            if end_match:
+            if end_match := _RE_REGION_TAG_END.search(line):
                 end_tags.add(end_match.group(1))
 
-    startEndDiff = start_tags.difference(end_tags)
-    if len(startEndDiff) > 0:
+    if startEndDiff := start_tags.difference(end_tags):
         raise MissingEndTag(path, startEndDiff)
 
     return start_tags
@@ -108,11 +103,15 @@ def regionsInFile(path):
 def findFileWithPattern(folder, pattern):
     matches = []
     for root, dirnames, filenames in os.walk(folder):
-        for dirname in fnmatch.filter(dirnames, pattern):
-            matches.append(os.path.join(root, dirname))
+        matches.extend(
+            os.path.join(root, dirname)
+            for dirname in fnmatch.filter(dirnames, pattern)
+        )
 
-        for filename in fnmatch.filter(filenames, pattern):
-            matches.append(os.path.join(root, filename))
+        matches.extend(
+            os.path.join(root, filename)
+            for filename in fnmatch.filter(filenames, pattern)
+        )
 
     return matches
 
